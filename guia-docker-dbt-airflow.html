@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia Completo — Docker, dbt e Airflow</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --docker: #2496ed;
+    --dbt: #ff6b35;
+    --airflow: #017cee;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --purple: #bc8cff;
+    --code-bg: #0d1117;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,17,23,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    height: 56px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    white-space: nowrap;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0.25rem;
+    list-style: none;
+    flex-shrink: 0;
+  }
+
+  .nav-links a {
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .nav-links a:hover { color: var(--text); background: var(--surface2); }
+  .nav-links a.docker { color: var(--docker); }
+  .nav-links a.dbt { color: var(--dbt); }
+  .nav-links a.airflow { color: var(--airflow); }
+
+  /* HERO */
+  .hero {
+    padding: 5rem 2rem 4rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 0.3rem 1rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 1.2rem;
+    letter-spacing: -0.02em;
+  }
+
+  .hero h1 span.docker { color: var(--docker); }
+  .hero h1 span.dbt { color: var(--dbt); }
+  .hero h1 span.airflow { color: var(--airflow); }
+
+  .hero p {
+    font-size: 1.1rem;
+    color: var(--muted);
+    max-width: 640px;
+    margin-bottom: 2rem;
+    font-weight: 300;
+  }
+
+  .stack-pills {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 3rem;
+  }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid;
+    text-decoration: none;
+  }
+  .pill.docker { color: var(--docker); border-color: rgba(36,150,237,0.3); background: rgba(36,150,237,0.07); }
+  .pill.dbt { color: var(--dbt); border-color: rgba(255,107,53,0.3); background: rgba(255,107,53,0.07); }
+  .pill.airflow { color: var(--airflow); border-color: rgba(1,124,238,0.3); background: rgba(1,124,238,0.07); }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 4rem;
+  }
+
+  .flow-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .flow-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .flow-arrow {
+    color: var(--border);
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .flow-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-left: 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* MAIN CONTENT */
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+
+  /* SECTION */
+  .section {
+    margin-bottom: 5rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+  }
+
+  .section-title.docker { color: var(--docker); }
+  .section-title.dbt { color: var(--dbt); }
+  .section-title.airflow { color: var(--airflow); }
+
+  .section-link {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 0.8rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .section-link:hover { color: var(--text); border-color: var(--muted); }
+
+  .intro-text {
+    color: var(--muted);
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+    max-width: 700px;
+  }
+
+  /* SUBSECTION */
+  .subsection {
+    margin-bottom: 3rem;
+  }
+
+  .subsection-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .subsection-title .tag {
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 400;
+  }
+  .tag.file { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .tag.template { background: rgba(168,85,247,0.15); color: var(--purple); }
+  .tag.example { background: rgba(63,185,80,0.15); color: var(--green); }
+
+  .subsection-desc {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .code-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .code-filename {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .code-lang {
+    font-size: 0.7rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    padding: 0.1rem 0.4rem;
+    background: var(--surface2);
+    border-radius: 4px;
+  }
+
+  .code-body {
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+  }
+
+  pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    tab-size: 2;
+    white-space: pre;
+  }
+
+  /* SYNTAX HIGHLIGHTING */
+  .kw { color: #ff7b72; } /* keywords */
+  .str { color: #a5d6ff; } /* strings */
+  .num { color: #79c0ff; } /* numbers */
+  .cmt { color: #8b949e; font-style: italic; } /* comments */
+  .fn { color: #d2a8ff; } /* functions */
+  .val { color: #56d364; } /* values/true/false */
+  .key { color: #e3b341; } /* yaml keys / property names */
+  .op { color: #ff7b72; } /* operators */
+  .tag-c { color: #7ee787; } /* docker FROM tags */
+  .var { color: #ffa657; } /* variables */
+  .cls { color: #f0883e; } /* class-like names */
+
+  /* ANNOTATIONS */
+  .annotations {
+    margin-top: 0.75rem;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .annotation {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.75rem;
+    align-items: start;
+    font-size: 0.83rem;
+    line-height: 1.5;
+  }
+
+  .annotation-key {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    color: var(--yellow);
+    white-space: nowrap;
+  }
+
+  .annotation-val { color: var(--muted); }
+
+  /* CALLOUT */
+  .callout {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.875rem;
+    display: flex;
+    gap: 0.75rem;
+    border: 1px solid;
+  }
+
+  .callout.tip { background: rgba(63,185,80,0.07); border-color: rgba(63,185,80,0.25); color: #7ee787; }
+  .callout.warn { background: rgba(210,153,34,0.07); border-color: rgba(210,153,34,0.25); color: var(--yellow); }
+  .callout.info { background: rgba(36,150,237,0.07); border-color: rgba(36,150,237,0.25); color: #58a6ff; }
+
+  .callout-icon { flex-shrink: 0; font-size: 1rem; }
+  .callout-body { color: var(--text); }
+  .callout-body strong { color: inherit; }
+
+  /* TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.85rem;
+  }
+
+  th {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  td {
+    border: 1px solid var(--border);
+    padding: 0.6rem 1rem;
+    color: var(--muted);
+    vertical-align: top;
+  }
+
+  td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--yellow);
+    white-space: nowrap;
+  }
+
+  tr:hover td { background: var(--surface2); }
+
+  /* GRID */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-body {
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  /* INLINE CODE */
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    color: #a5d6ff;
+  }
+
+  /* SEPARATOR */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 3rem 0;
+  }
+
+  /* FINAL SECTION */
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+
+  .summary h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .summary-item {
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid;
+  }
+  .summary-item.docker { background: rgba(36,150,237,0.06); border-color: rgba(36,150,237,0.2); }
+  .summary-item.dbt { background: rgba(255,107,53,0.06); border-color: rgba(255,107,53,0.2); }
+  .summary-item.airflow { background: rgba(1,124,238,0.06); border-color: rgba(1,124,238,0.2); }
+
+  .summary-tool {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+  .summary-item.docker .summary-tool { color: var(--docker); }
+  .summary-item.dbt .summary-tool { color: var(--dbt); }
+  .summary-item.airflow .summary-tool { color: var(--airflow); }
+
+  .summary-list {
+    list-style: none;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .summary-list li::before { content: "→ "; color: var(--border); }
+
+  @media (max-width: 640px) {
+    .hero { padding: 3rem 1.25rem 2rem; }
+    .content { padding: 0 1.25rem 4rem; }
+    .flow { padding: 1rem; }
+    .annotation { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">pipeline.guide</a>
+  <ul class="nav-links">
+    <li><a href="#visao-geral">Visão Geral</a></li>
+    <li><a href="#docker" class="docker">Docker</a></li>
+    <li><a href="#dbt" class="dbt">dbt</a></li>
+    <li><a href="#airflow" class="airflow">Airflow</a></li>
+    <li><a href="#integracao">Integração</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">📦 Guia Prático de Engenharia de Dados</div>
+  <h1>
+    <span class="docker">Docker</span>,
+    <span class="dbt">dbt</span><br>
+    &amp; <span class="airflow">Airflow</span>
+  </h1>
+  <p>
+    Entenda de verdade como estruturar código e configurações das três ferramentas que formam o backbone de pipelines de dados modernos — com cada linha explicada.
+  </p>
+
+  <div class="stack-pills">
+    <a class="pill docker" href="https://docs.docker.com" target="_blank">🐋 Docker Docs</a>
+    <a class="pill dbt" href="https://docs.getdbt.com" target="_blank">🔧 dbt Docs</a>
+    <a class="pill airflow" href="https://airflow.apache.org/docs/" target="_blank">🌀 Airflow Docs</a>
+  </div>
+
+  <div id="visao-geral" class="flow">
+    <div class="flow-item">
+      <div class="flow-dot" style="background:var(--docker)"></div>
+      <span style="color:var(--docker); font-weight:600;">Docker</span>
+      <span class="flow-desc">cria o ambiente</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-item">
+      <div class="flow-dot" style="background:var(--airflow)"></div>
+      <span style="color:var(--airflow); font-weight:600;">Airflow</span>
+      <span class="flow-desc">orquestra o pipeline</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-item">
+      <div class="flow-dot" style="background:var(--dbt)"></div>
+      <span style="color:var(--dbt); font-weight:600;">dbt</span>
+      <span class="flow-desc">transforma os dados</span>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-item">
+      <div class="flow-dot" style="background:var(--green)"></div>
+      <span style="color:var(--green); font-weight:600;">Data Warehouse</span>
+      <span class="flow-desc">destino final</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────── CONTENT ─────────────── -->
+<div class="content">
+
+<!-- ════════════════════ DOCKER ════════════════════ -->
+<section class="section" id="docker">
+  <div class="section-header">
+    <span class="section-number">01</span>
+    <h2 class="section-title docker">Docker</h2>
+    <a class="section-link" href="https://docs.docker.com/get-started/" target="_blank">↗ Docs oficiais</a>
+  </div>
+
+  <p class="intro-text">
+    Docker empacota sua aplicação, dependências e configurações em um <strong>container</strong> — uma unidade isolada e reproduzível que roda igual em qualquer máquina. Chega de "funciona no meu computador".
+  </p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Sem Docker</div>
+      <div class="card-body">Cada desenvolvedor instala dependências manualmente. Versões diferentes causam bugs difíceis de rastrear. Deploy é imprevisível.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Com Docker</div>
+      <div class="card-body">Todo o ambiente vive em um arquivo. Qualquer pessoa clona o repositório e roda <code>docker compose up</code>. O resultado é sempre idêntico.</div>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <span class="callout-icon">ℹ️</span>
+    <div class="callout-body">Dois arquivos principais: <strong>Dockerfile</strong> (define como construir a imagem) e <strong>docker-compose.yml</strong> (define como rodar múltiplos containers juntos).</div>
+  </div>
+
+  <!-- ── Dockerfile ── -->
+  <div class="subsection">
+    <div class="subsection-title">
+      Dockerfile — Template Base
+      <span class="tag file">arquivo</span>
+      <span class="tag template">template</span>
+    </div>
+    <p class="subsection-desc">
+      O Dockerfile é uma receita que diz ao Docker como montar sua imagem. Cada linha é uma instrução executada em sequência durante o <code>docker build</code>.
+      <a href="https://docs.docker.com/reference/dockerfile/" target="_blank" style="color:var(--docker)">→ Referência completa</a>
+    </p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 Dockerfile</span>
+        <span class="code-lang">dockerfile</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="tag-c">FROM</span> <span class="str">python:3.11-slim</span>          <span class="cmt"># Imagem base — Python 3.11 versão leve (~50MB)</span>
+
+<span class="tag-c">WORKDIR</span> <span class="str">/app</span>                     <span class="cmt"># Define o diretório de trabalho dentro do container</span>
+
+<span class="tag-c">COPY</span> <span class="str">requirements.txt .</span>          <span class="cmt"># Copia só o requirements.txt ANTES do restante do código</span>
+
+<span class="tag-c">RUN</span> <span class="fn">pip install</span> --no-cache-dir \  <span class="cmt"># Instala dependências sem salvar cache (mantém a imagem menor)</span>
+    -r requirements.txt
+
+<span class="tag-c">COPY</span> <span class="str">. .</span>                          <span class="cmt"># Copia todo o código da máquina local para /app</span>
+
+<span class="tag-c">EXPOSE</span> <span class="num">8000</span>                      <span class="cmt"># Documenta que o container usa a porta 8000 (não abre sozinho)</span>
+
+<span class="tag-c">CMD</span> [<span class="str">"python"</span>, <span class="str">"app.py"</span>]         <span class="cmt"># Comando padrão ao iniciar o container</span>
+</pre>
+      </div>
+    </div>
+
+    <div class="annotations">
+      <div class="annotation">
+        <span class="annotation-key">FROM python:3.11-slim</span>
+        <span class="annotation-val">A imagem base é o ponto de partida. <code>slim</code> é uma variante mais leve que omite ferramentas desnecessárias. Alternativas: <code>python:3.11-alpine</code> (menor ainda) ou <code>python:3.11</code> (completo). <a href="https://hub.docker.com/_/python" target="_blank" style="color:var(--docker)">Ver todas no Docker Hub</a></span>
+      </div>
+      <div class="annotation">
+        <span class="annotation-key">WORKDIR /app</span>
+        <span class="annotation-val">Cria e acessa o diretório <code>/app</code> dentro do container. Todos os comandos subsequentes rodam a partir daqui. Evita trabalhar no diretório raiz <code>/</code>.</span>
+      </div>
+      <div class="annotation">
+        <span class="annotation-key">COPY requirements antes do código</span>
+        <span class="annotation-val">Técnica de otimização de cache: o Docker reutiliza camadas que não mudaram. Se você só alterou código (não dependências), o <code>pip install</code> não roda novamente — o build fica muito mais rápido.</span>
+      </div>
+      <div class="annotation">
+        <span class="annotation-key">CMD vs ENTRYPOINT</span>
+        <span class="annotation-val"><code>CMD</code> define o comando padrão mas pode ser sobrescrito em tempo de execução. <code>ENTRYPOINT</code> é fixo. Para scripts principais, geralmente <code>CMD</code> basta. <a href="https://docs.docker.com/reference/dockerfile/#cmd" target="_blank" style="color:var(--docker)">Saiba mais</a></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── docker-compose ── -->
+  <div class="subsection">
+    <div class="subsection-title">
+      docker-compose.yml — Template Base
+      <span class="tag file">arquivo</span>
+      <span class="tag template">template</span>
+    </div>
+    <p class="subsection-desc">
+      O Compose orquestra múltiplos containers como um serviço único. Com um só comando (<code>docker compose up</code>) você sobe a aplicação, banco de dados, cache — tudo junto e conectado.
+      <a href="https://docs.docker.com/compose/compose-file/" target="_blank" style="color:var(--docker)">→ Referência do Compose</a>
+    </p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 docker-compose.yml</span>
+        <span class="code-lang">yaml</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="key">version</span>: <span class="str">"3.9"</span>              <span class="cmt"># Versão do schema do Compose (3.x é a atual)</span>
+
+<span class="key">services</span>:
+
+  <span class="key">app</span>:                         <span class="cmt"># Nome do serviço (você escolhe)</span>
+    <span class="key">build</span>: <span class="str">.</span>                  <span class="cmt"># Usa o Dockerfile na pasta atual para construir a imagem</span>
+    <span class="key">container_name</span>: <span class="str">meu_app</span>  <span class="cmt"># Nome explícito do container (opcional)</span>
+    <span class="key">ports</span>:
+      - <span class="str">"8000:8000"</span>           <span class="cmt"># HOST:CONTAINER — porta local:porta do container</span>
+    <span class="key">volumes</span>:
+      - <span class="str">.:/app</span>               <span class="cmt"># Monta a pasta local dentro do container (hot reload)</span>
+    <span class="key">environment</span>:
+      - <span class="str">ENV=dev</span>              <span class="cmt"># Variáveis de ambiente injetadas no container</span>
+    <span class="key">depends_on</span>:
+      - <span class="str">db</span>                   <span class="cmt"># Garante que 'db' inicia antes de 'app'</span>
+
+  <span class="key">db</span>:
+    <span class="key">image</span>: <span class="str">postgres:15</span>        <span class="cmt"># Usa imagem pronta (sem Dockerfile próprio)</span>
+    <span class="key">container_name</span>: <span class="str">meu_postgres</span>
+    <span class="key">ports</span>:
+      - <span class="str">"5432:5432"</span>
+    <span class="key">environment</span>:
+      <span class="key">POSTGRES_USER</span>: <span class="str">usuario</span>    <span class="cmt"># Variáveis específicas da imagem postgres</span>
+      <span class="key">POSTGRES_PASSWORD</span>: <span class="str">senha</span>
+      <span class="key">POSTGRES_DB</span>: <span class="str">banco</span>
+    <span class="key">volumes</span>:
+      - <span class="str">postgres_data:/var/lib/postgresql/data</span>  <span class="cmt"># Volume nomeado: persiste dados entre reinicios</span>
+
+<span class="key">volumes</span>:
+  <span class="key">postgres_data</span>:             <span class="cmt"># Declara o volume nomeado para o Compose gerenciar</span>
+</pre>
+      </div>
+    </div>
+
+    <div class="annotations">
+      <div class="annotation">
+        <span class="annotation-key">ports "8000:8000"</span>
+        <span class="annotation-val">Formato <code>PORTA_HOST:PORTA_CONTAINER</code>. Se a porta 8000 do host estiver ocupada, mude para <code>"8080:8000"</code> — o container continua usando 8000, mas você acessa em localhost:8080.</span>
+      </div>
+      <div class="annotation">
+        <span class="annotation-key">volumes ".:/app"</span>
+        <span class="annotation-val">Bind mount: sincroniza em tempo real a pasta local com o container. Edite o código e veja as mudanças sem rebuildar a imagem. Ideal para desenvolvimento, não para produção.</span>
+      </div>
+      <div class="annotation">
+        <span class="annotation-key">depends_on</span>
+        <span class="annotation-val">⚠️ Garante apenas que o container <em>inicia</em> antes, não que o serviço está pronto. Para esperar o Postgres aceitar conexões, use <code>healthcheck</code> ou ferramentas como <a href="https://github.com/vishnubob/wait-for-it" target="_blank" style="color:var(--docker)">wait-for-it</a>.</span>
+      </div>
+      <div class="annotation">
+        <span class="annotation-key">volumes nomeados</span>
+        <span class="annotation-val">Diferente do bind mount, volumes nomeados são gerenciados pelo Docker. Os dados do Postgres sobrevivem a <code>docker compose down</code>. Para apagar os dados também, use <code>docker compose down -v</code>.</span>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body"><strong>Comandos essenciais:</strong> <code>docker compose up -d</code> (sobe em background), <code>docker compose logs -f app</code> (acompanha logs), <code>docker compose down</code> (para e remove containers).</div>
+    </div>
+  </div>
+
+  <!-- ── Exemplos Docker ── -->
+  <div class="subsection">
+    <div class="subsection-title">
+      Exemplo completo — App Python + PostgreSQL
+      <span class="tag example">exemplo</span>
+    </div>
+    <p class="subsection-desc">Um setup real com aplicação Python se conectando ao banco via variáveis de ambiente.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 docker-compose.yml — App + Postgres</span>
+        <span class="code-lang">yaml</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="key">version</span>: <span class="str">"3.9"</span>
+
+<span class="key">services</span>:
+  <span class="key">app</span>:
+    <span class="key">build</span>: <span class="str">.</span>
+    <span class="key">container_name</span>: <span class="str">app_python</span>
+    <span class="key">ports</span>:
+      - <span class="str">"8000:8000"</span>
+    <span class="key">volumes</span>:
+      - <span class="str">.:/app</span>
+    <span class="key">depends_on</span>:
+      - <span class="str">postgres</span>
+    <span class="key">environment</span>:             <span class="cmt"># App lê estas variáveis com os.environ.get()</span>
+      - <span class="str">DB_HOST=postgres</span>      <span class="cmt"># Nome do serviço vira hostname na rede interna do Compose</span>
+      - <span class="str">DB_PORT=5432</span>
+      - <span class="str">DB_NAME=meubanco</span>
+      - <span class="str">DB_USER=walter</span>
+      - <span class="str">DB_PASSWORD=123456</span>
+
+  <span class="key">postgres</span>:
+    <span class="key">image</span>: <span class="str">postgres:15</span>
+    <span class="key">container_name</span>: <span class="str">postgres_db</span>
+    <span class="key">environment</span>:
+      <span class="key">POSTGRES_DB</span>: <span class="str">meubanco</span>
+      <span class="key">POSTGRES_USER</span>: <span class="str">walter</span>
+      <span class="key">POSTGRES_PASSWORD</span>: <span class="str">123456</span>
+    <span class="key">ports</span>:
+      - <span class="str">"5432:5432"</span>           <span class="cmt"># Expõe para ferramentas externas (DBeaver, TablePlus...)</span>
+</pre>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body"><strong>Em produção</strong>, nunca coloque senhas diretamente no <code>docker-compose.yml</code>. Use um arquivo <code>.env</code> na raiz e referencie com <code>${DB_PASSWORD}</code>. Adicione <code>.env</code> ao <code>.gitignore</code>.</div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ════════════════════ DBT ════════════════════ -->
+<section class="section" id="dbt">
+  <div class="section-header">
+    <span class="section-number">02</span>
+    <h2 class="section-title dbt">dbt</h2>
+    <a class="section-link" href="https://docs.getdbt.com/docs/introduction" target="_blank">↗ Docs oficiais</a>
+  </div>
+
+  <p class="intro-text">
+    dbt (data build tool) traz as boas práticas de engenharia de software para as transformações SQL: modularidade com <code>ref()</code>, testes automatizados, documentação gerada e lineage visual. Você escreve SQL, o dbt cuida do resto.
+  </p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">O que o dbt faz</div>
+      <div class="card-body">Compila e executa modelos SQL no seu data warehouse (BigQuery, Snowflake, Redshift, Postgres...). Gerencia dependências entre modelos e materializações (view, table, incremental).</div>
+    </div>
+    <div class="card">
+      <div class="card-title">O que o dbt NÃO faz</div>
+      <div class="card-body">dbt não move dados (isso é o EL do ELT). Ele só faz o T (Transform). Para ingestão use Airbyte, Fivetran, ou custom pipelines.</div>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <span class="callout-icon">📁</span>
+    <div class="callout-body"><strong>Estrutura de pastas padrão:</strong> <code>models/</code> (SQLs), <code>seeds/</code> (CSVs estáticos), <code>tests/</code> (testes custom), <code>macros/</code> (funções reutilizáveis), <code>dbt_project.yml</code> e <code>profiles.yml</code>.</div>
+  </div>
+
+  <!-- dbt_project.yml -->
+  <div class="subsection">
+    <div class="subsection-title">
+      dbt_project.yml — Configuração do projeto
+      <span class="tag file">arquivo</span>
+      <span class="tag template">template</span>
+    </div>
+    <p class="subsection-desc">
+      O arquivo central de configuração do dbt. Define nome do projeto, caminhos dos arquivos e configurações globais dos modelos (como materialização padrão por camada).
+      <a href="https://docs.getdbt.com/reference/dbt_project.yml" target="_blank" style="color:var(--dbt)">→ Referência completa</a>
+    </p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 dbt_project.yml</span>
+        <span class="code-lang">yaml</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="key">name</span>: <span class="str">'meu_projeto_dbt'</span>        <span class="cmt"># Nome do projeto (usado como namespace)</span>
+<span class="key">version</span>: <span class="str">'1.0.0'</span>
+<span class="key">config-version</span>: <span class="num">2</span>              <span class="cmt"># Versão do schema de configuração (sempre 2)</span>
+
+<span class="key">profile</span>: <span class="str">'meu_profile'</span>          <span class="cmt"># Referencia o perfil em profiles.yml</span>
+
+<span class="key">model-paths</span>: [<span class="str">"models"</span>]         <span class="cmt"># Onde ficam os modelos SQL</span>
+<span class="key">seed-paths</span>: [<span class="str">"seeds"</span>]           <span class="cmt"># Onde ficam os CSVs de seed</span>
+<span class="key">test-paths</span>: [<span class="str">"tests"</span>]           <span class="cmt"># Onde ficam os testes customizados</span>
+
+<span class="key">models</span>:
+  <span class="key">meu_projeto_dbt</span>:              <span class="cmt"># Deve bater com o campo 'name' acima</span>
+
+    <span class="key">staging</span>:                    <span class="cmt"># Camada de staging: limpeza e padronização</span>
+      <span class="key">+materialized</span>: <span class="str">view</span>      <span class="cmt"># View é rápido de criar, sem custo de storage</span>
+
+    <span class="key">marts</span>:                      <span class="cmt"># Camada final: pronta para consumo (BI, analistas)</span>
+      <span class="key">+materialized</span>: <span class="str">table</span>     <span class="cmt"># Table é mais rápida para queries de BI</span>
+</pre>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>Materialização</th><th>Quando usar</th><th>Custo</th></tr>
+      <tr><td>view</td><td>Dados que mudam frequentemente, staging</td><td>Sem storage extra, query mais lenta</td></tr>
+      <tr><td>table</td><td>Marts finais, queries frequentes de BI</td><td>Storage + tempo de build</td></tr>
+      <tr><td>incremental</td><td>Tabelas grandes, processa só dados novos</td><td>Mais complexo, muito mais rápido</td></tr>
+      <tr><td>ephemeral</td><td>Subqueries intermediárias, sem materializar</td><td>Zero storage, lógica inline</td></tr>
+    </table>
+  </div>
+
+  <!-- profiles.yml -->
+  <div class="subsection">
+    <div class="subsection-title">
+      profiles.yml — Conexão com o banco
+      <span class="tag file">arquivo</span>
+      <span class="tag template">template</span>
+    </div>
+    <p class="subsection-desc">
+      Fica em <code>~/.dbt/profiles.yml</code> (fora do repositório por segurança). Define como o dbt se conecta ao data warehouse em cada ambiente.
+      <a href="https://docs.getdbt.com/docs/core/connect-data-platform/profiles.yml" target="_blank" style="color:var(--dbt)">→ Ver todos os adapters</a>
+    </p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 ~/.dbt/profiles.yml</span>
+        <span class="code-lang">yaml</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="key">meu_profile</span>:                   <span class="cmt"># Deve bater com 'profile' no dbt_project.yml</span>
+  <span class="key">target</span>: <span class="str">dev</span>                  <span class="cmt"># Qual output usar por padrão</span>
+  <span class="key">outputs</span>:
+
+    <span class="key">dev</span>:                         <span class="cmt"># Ambiente de desenvolvimento</span>
+      <span class="key">type</span>: <span class="str">postgres</span>            <span class="cmt"># Adapter: postgres, bigquery, snowflake, redshift...</span>
+      <span class="key">host</span>: <span class="str">localhost</span>
+      <span class="key">user</span>: <span class="str">usuario</span>
+      <span class="key">password</span>: <span class="str">senha</span>
+      <span class="key">port</span>: <span class="num">5432</span>
+      <span class="key">dbname</span>: <span class="str">meu_banco</span>
+      <span class="key">schema</span>: <span class="str">analytics</span>          <span class="cmt"># Schema onde os modelos serão criados</span>
+      <span class="key">threads</span>: <span class="num">4</span>                  <span class="cmt"># Número de modelos rodando em paralelo</span>
+
+    <span class="key">prod</span>:                        <span class="cmt"># Ambiente de produção (separado)</span>
+      <span class="key">type</span>: <span class="str">postgres</span>
+      <span class="key">host</span>: <span class="str">prod-db.empresa.com</span>
+      <span class="key">schema</span>: <span class="str">analytics_prod</span>
+      <span class="key">threads</span>: <span class="num">8</span>
+</pre>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="callout-icon">⚠️</span>
+      <div class="callout-body"><strong>Nunca comite o profiles.yml.</strong> Ele contém credenciais. Em CI/CD, use variáveis de ambiente: <code>host: "{{ env_var('DBT_HOST') }}"</code>.</div>
+    </div>
+  </div>
+
+  <!-- Modelos dbt -->
+  <div class="subsection">
+    <div class="subsection-title">
+      Modelos SQL — source(), ref() e camadas
+      <span class="tag template">template</span>
+    </div>
+    <p class="subsection-desc">
+      O coração do dbt. Cada modelo é um arquivo <code>.sql</code> com uma query <code>SELECT</code>. O dbt compila e executa no banco. Use <code>source()</code> para dados brutos e <code>ref()</code> para referenciar outros modelos.
+    </p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 models/staging/stg_clientes.sql</span>
+        <span class="code-lang">sql + jinja</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="cmt">-- source() referencia tabelas brutas definidas em sources.yml</span>
+<span class="cmt">-- Argumento 1: nome da source, Argumento 2: nome da tabela</span>
+<span class="kw">select</span>
+    id         <span class="kw">as</span> cliente_id,   <span class="cmt">-- Renomeia para padronizar nomenclatura</span>
+    nome,
+    email,
+    created_at <span class="kw">as</span> data_criacao
+<span class="kw">from</span> <span class="fn">{{ source('origem', 'clientes') }}</span>
+<span class="kw">where</span> email <span class="kw">is not null</span>         <span class="cmt">-- Filtros de qualidade ficam no staging</span>
+</pre>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 models/intermediate/int_pedidos_por_cliente.sql</span>
+        <span class="code-lang">sql + jinja</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="cmt">-- ref() cria uma dependência explícita entre modelos</span>
+<span class="cmt">-- dbt resolve a ordem de execução automaticamente pelo DAG</span>
+<span class="kw">select</span>
+    cliente_id,
+    <span class="fn">count</span>(*) <span class="kw">as</span> qtd_pedidos,
+    <span class="fn">sum</span>(valor_total) <span class="kw">as</span> valor_total,
+    <span class="fn">max</span>(data_pedido) <span class="kw">as</span> ultimo_pedido
+<span class="kw">from</span> <span class="fn">{{ ref('stg_pedidos') }}</span>      <span class="cmt">-- Referencia o modelo de staging</span>
+<span class="kw">group by</span> cliente_id
+</pre>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 models/marts/dim_clientes_completo.sql</span>
+        <span class="code-lang">sql + jinja</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="cmt">-- Mart: modelo final com join de múltiplas fontes</span>
+<span class="cmt">-- Este é o modelo que o BI vai consumir</span>
+<span class="kw">select</span>
+    p.pedido_id,
+    p.cliente_id,
+    c.nome      <span class="kw">as</span> nome_cliente,
+    c.email,
+    p.valor_total,
+    p.data_pedido
+<span class="kw">from</span> <span class="fn">{{ ref('stg_pedidos') }}</span> p
+<span class="kw">left join</span> <span class="fn">{{ ref('stg_clientes') }}</span> c
+    <span class="kw">on</span> p.cliente_id = c.cliente_id
+</pre>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body"><strong>Arquitetura em camadas:</strong> <code>staging</code> (dados brutos limpos) → <code>intermediate</code> (lógica de negócio) → <code>marts</code> (tabelas prontas para consumo). Cada camada referencia somente a anterior com <code>ref()</code>. <a href="https://docs.getdbt.com/best-practices/how-we-structure/1-guide-overview" target="_blank" style="color:var(--dbt)">Ver guia de estrutura</a></div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ════════════════════ AIRFLOW ════════════════════ -->
+<section class="section" id="airflow">
+  <div class="section-header">
+    <span class="section-number">03</span>
+    <h2 class="section-title airflow">Airflow</h2>
+    <a class="section-link" href="https://airflow.apache.org/docs/apache-airflow/stable/index.html" target="_blank">↗ Docs oficiais</a>
+  </div>
+
+  <p class="intro-text">
+    Apache Airflow é a plataforma de orquestração mais usada em engenharia de dados. Você define pipelines como código Python (DAGs), agenda execuções, monitora falhas e gerencia dependências entre tarefas com uma interface visual completa.
+  </p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">DAG</div>
+      <div class="card-body">Directed Acyclic Graph — a definição do pipeline. Contém tarefas e as dependências entre elas. Um DAG é um arquivo Python na pasta <code>dags/</code>.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Operator</div>
+      <div class="card-body">Template de tarefa. <code>PythonOperator</code> roda Python, <code>BashOperator</code> roda shell, <code>PostgresOperator</code> roda SQL. Centenas de operadores disponíveis via providers.</div>
+    </div>
+  </div>
+
+  <!-- DAG Template -->
+  <div class="subsection">
+    <div class="subsection-title">
+      DAG — Template Base
+      <span class="tag template">template</span>
+    </div>
+    <p class="subsection-desc">
+      Todo DAG segue esta estrutura: imports, default_args, definição do DAG com contexto (<code>with DAG(...)</code>), e tarefas com suas dependências.
+      <a href="https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html" target="_blank" style="color:var(--airflow)">→ Conceitos de DAGs</a>
+    </p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 dags/dag_exemplo.py</span>
+        <span class="code-lang">python</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="kw">from</span> airflow <span class="kw">import</span> DAG
+<span class="kw">from</span> airflow.operators.python <span class="kw">import</span> PythonOperator
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+
+<span class="cmt"># default_args são aplicados a TODAS as tarefas do DAG</span>
+<span class="var">default_args</span> = {
+    <span class="str">"owner"</span>: <span class="str">"data_team"</span>,          <span class="cmt"># Responsável (visível na UI)</span>
+    <span class="str">"retries"</span>: <span class="num">1</span>,                  <span class="cmt"># Tentativas em caso de falha</span>
+    <span class="str">"retry_delay"</span>: <span class="fn">timedelta</span>(minutes=<span class="num">5</span>)  <span class="cmt"># Tempo de espera entre tentativas</span>
+}
+
+<span class="kw">def</span> <span class="fn">minha_tarefa</span>():
+    <span class="fn">print</span>(<span class="str">"Executando tarefa"</span>)
+
+<span class="cmt"># 'with DAG(...)' é o context manager que registra as tarefas no DAG</span>
+<span class="kw">with</span> <span class="fn">DAG</span>(
+    <span class="var">dag_id</span>=<span class="str">"dag_exemplo"</span>,          <span class="cmt"># Identificador único na UI do Airflow</span>
+    <span class="var">default_args</span>=<span class="var">default_args</span>,
+    <span class="var">schedule</span>=<span class="str">"@daily"</span>,            <span class="cmt"># Cron ou preset: @hourly, @weekly, None</span>
+    <span class="var">start_date</span>=<span class="fn">datetime</span>(<span class="num">2026</span>,<span class="num">3</span>,<span class="num">1</span>), <span class="cmt"># Data de início para backfill</span>
+    <span class="var">catchup</span>=<span class="val">False</span>                  <span class="cmt"># False = não executa runs passadas</span>
+) <span class="kw">as</span> <span class="var">dag</span>:
+
+    <span class="var">tarefa</span> = <span class="fn">PythonOperator</span>(
+        <span class="var">task_id</span>=<span class="str">"executar_funcao"</span>,   <span class="cmt"># ID único DENTRO do DAG</span>
+        <span class="var">python_callable</span>=<span class="fn">minha_tarefa</span> <span class="cmt"># Função Python a executar</span>
+    )
+</pre>
+      </div>
+    </div>
+
+    <div class="annotations">
+      <div class="annotation">
+        <span class="annotation-key">schedule="@daily"</span>
+        <span class="annotation-val">Presets disponíveis: <code>@once</code>, <code>@hourly</code>, <code>@daily</code>, <code>@weekly</code>, <code>@monthly</code>, <code>None</code> (só manual). Ou use cron direto: <code>"0 6 * * *"</code> (todo dia às 6h). <a href="https://crontab.guru" target="_blank" style="color:var(--airflow)">Valide seu cron aqui</a></span>
+      </div>
+      <div class="annotation">
+        <span class="annotation-key">catchup=False</span>
+        <span class="annotation-val">Com <code>True</code>, o Airflow executaria TODAS as runs desde <code>start_date</code> até hoje. Para novos DAGs, sempre use <code>False</code> para evitar dezenas de execuções indesejadas.</span>
+      </div>
+      <div class="annotation">
+        <span class="annotation-key">retries e retry_delay</span>
+        <span class="annotation-val">Em pipelines de produção, configure pelo menos 2–3 retries com delay progressivo. Falhas de rede transitórias resolvem sozinhas. Use <code>email_on_failure=True</code> nos default_args para alertas.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pipeline ETL -->
+  <div class="subsection">
+    <div class="subsection-title">
+      Pipeline ETL com dependências
+      <span class="tag example">exemplo</span>
+    </div>
+    <p class="subsection-desc">
+      O operador <code>>></code> (bitshift) define a ordem de execução. A tarefa à direita só começa quando a esquerda conclui com sucesso.
+    </p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 dags/pipeline_etl.py</span>
+        <span class="code-lang">python</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="kw">from</span> airflow <span class="kw">import</span> DAG
+<span class="kw">from</span> airflow.operators.python <span class="kw">import</span> PythonOperator
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+
+<span class="cmt"># Funções separadas do DAG — facilita teste unitário</span>
+<span class="kw">def</span> <span class="fn">extrair</span>():
+    <span class="fn">print</span>(<span class="str">"Extraindo dados da API..."</span>)
+
+<span class="kw">def</span> <span class="fn">transformar</span>():
+    <span class="fn">print</span>(<span class="str">"Aplicando transformações..."</span>)
+
+<span class="kw">def</span> <span class="fn">carregar</span>():
+    <span class="fn">print</span>(<span class="str">"Carregando no data warehouse..."</span>)
+
+<span class="kw">with</span> <span class="fn">DAG</span>(
+    <span class="var">dag_id</span>=<span class="str">"pipeline_etl"</span>,
+    <span class="var">schedule</span>=<span class="str">"@daily"</span>,
+    <span class="var">start_date</span>=<span class="fn">datetime</span>(<span class="num">2026</span>, <span class="num">3</span>, <span class="num">1</span>),
+    <span class="var">catchup</span>=<span class="val">False</span>
+) <span class="kw">as</span> <span class="var">dag</span>:
+
+    <span class="var">t_extrair</span> = <span class="fn">PythonOperator</span>(task_id=<span class="str">"extrair"</span>, python_callable=<span class="fn">extrair</span>)
+    <span class="var">t_transf</span>  = <span class="fn">PythonOperator</span>(task_id=<span class="str">"transformar"</span>, python_callable=<span class="fn">transformar</span>)
+    <span class="var">t_carregar</span>= <span class="fn">PythonOperator</span>(task_id=<span class="str">"carregar"</span>, python_callable=<span class="fn">carregar</span>)
+
+    <span class="cmt"># Define a cadeia de execução: extrair → transformar → carregar</span>
+    <span class="var">t_extrair</span> <span class="op">>></span> <span class="var">t_transf</span> <span class="op">>></span> <span class="var">t_carregar</span>
+
+    <span class="cmt"># Para branches paralelas: [t_a, t_b] >> t_c (a e b rodam juntas, c espera ambas)</span>
+</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chamando dbt no Airflow -->
+  <div class="subsection">
+    <div class="subsection-title">
+      Chamando dbt dentro do Airflow
+      <span class="tag example">exemplo</span>
+    </div>
+    <p class="subsection-desc">
+      A integração mais comum: o Airflow orquestra quando o dbt roda. Use <code>BashOperator</code> para um setup simples, ou o provider oficial <a href="https://astronomer.io/docs/learn/airflow-dbt" target="_blank" style="color:var(--airflow)">airflow-provider-dbt</a> para controle granular por modelo.
+    </p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 dags/pipeline_com_dbt.py</span>
+        <span class="code-lang">python</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="kw">from</span> airflow <span class="kw">import</span> DAG
+<span class="kw">from</span> airflow.operators.python <span class="kw">import</span> PythonOperator
+<span class="kw">from</span> airflow.operators.bash <span class="kw">import</span> BashOperator
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+
+<span class="kw">def</span> <span class="fn">ingerir_dados</span>():
+    <span class="fn">print</span>(<span class="str">"Movendo dados brutos para o warehouse..."</span>)
+
+<span class="kw">with</span> <span class="fn">DAG</span>(
+    <span class="var">dag_id</span>=<span class="str">"pipeline_elt_completo"</span>,
+    <span class="var">schedule</span>=<span class="str">"0 5 * * *"</span>,          <span class="cmt"># Todo dia às 5h da manhã</span>
+    <span class="var">start_date</span>=<span class="fn">datetime</span>(<span class="num">2026</span>, <span class="num">3</span>, <span class="num">1</span>),
+    <span class="var">catchup</span>=<span class="val">False</span>
+) <span class="kw">as</span> <span class="var">dag</span>:
+
+    <span class="cmt"># 1) Ingestão: move dados brutos para o DW</span>
+    <span class="var">ingestao</span> = <span class="fn">PythonOperator</span>(
+        <span class="var">task_id</span>=<span class="str">"ingestao"</span>,
+        <span class="var">python_callable</span>=<span class="fn">ingerir_dados</span>
+    )
+
+    <span class="cmt"># 2) dbt run: executa todos os modelos</span>
+    <span class="var">dbt_run</span> = <span class="fn">BashOperator</span>(
+        <span class="var">task_id</span>=<span class="str">"dbt_run"</span>,
+        <span class="var">bash_command</span>=<span class="str">"cd /opt/airflow/dbt && dbt run --profiles-dir ."</span>
+        <span class="cmt"># Alternativa para rodar só um modelo: dbt run --select stg_clientes</span>
+    )
+
+    <span class="cmt"># 3) dbt test: valida qualidade dos dados após transformação</span>
+    <span class="var">dbt_test</span> = <span class="fn">BashOperator</span>(
+        <span class="var">task_id</span>=<span class="str">"dbt_test"</span>,
+        <span class="var">bash_command</span>=<span class="str">"cd /opt/airflow/dbt && dbt test --profiles-dir ."</span>
+    )
+
+    <span class="cmt"># Fluxo: ingestão → dbt run → dbt test</span>
+    <span class="var">ingestao</span> <span class="op">>></span> <span class="var">dbt_run</span> <span class="op">>></span> <span class="var">dbt_test</span>
+</pre>
+      </div>
+    </div>
+
+    <div class="callout tip">
+      <span class="callout-icon">💡</span>
+      <div class="callout-body"><strong>Dica pro:</strong> Instale o <a href="https://pypi.org/project/astronomer-cosmos/" target="_blank" style="color:var(--airflow)">astronomer-cosmos</a> para transformar cada modelo dbt em uma tarefa separada no Airflow — você ganha visibilidade e re-execução granular por modelo.</div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ════════════════════ INTEGRAÇÃO ════════════════════ -->
+<section class="section" id="integracao">
+  <div class="section-header">
+    <span class="section-number">04</span>
+    <h2 class="section-title" style="color:var(--green)">Conectando tudo</h2>
+  </div>
+
+  <p class="intro-text">
+    A stack completa rodando junta com um único <code>docker compose up</code>: Postgres como data warehouse, Airflow como orquestrador, e o projeto dbt montado como volume.
+  </p>
+
+  <div class="subsection">
+    <div class="subsection-title">
+      docker-compose completo — Airflow + dbt + Postgres
+      <span class="tag example">exemplo</span>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-filename">📄 docker-compose.yml — Stack completa</span>
+        <span class="code-lang">yaml</span>
+      </div>
+      <div class="code-body">
+<pre>
+<span class="key">version</span>: <span class="str">"3.9"</span>
+
+<span class="key">x-airflow-common</span>: <span class="cmt"># Âncora YAML — evita repetição de config</span>
+  &amp;<span class="str">airflow-common</span>
+  <span class="key">image</span>: <span class="str">apache/airflow:2.9.0</span>
+  <span class="key">environment</span>:
+    <span class="key">AIRFLOW__CORE__EXECUTOR</span>: <span class="str">LocalExecutor</span>
+    <span class="key">AIRFLOW__DATABASE__SQL_ALCHEMY_CONN</span>: <span class="str">postgresql+psycopg2://airflow:airflow@postgres/airflow</span>
+  <span class="key">volumes</span>:
+    - <span class="str">./dags:/opt/airflow/dags</span>        <span class="cmt"># Seus DAGs</span>
+    - <span class="str">./dbt:/opt/airflow/dbt</span>          <span class="cmt"># Projeto dbt</span>
+  <span class="key">depends_on</span>:
+    - <span class="str">postgres</span>
+
+<span class="key">services</span>:
+
+  <span class="key">postgres</span>:                           <span class="cmt"># Banco para metadados do Airflow E seus dados</span>
+    <span class="key">image</span>: <span class="str">postgres:15</span>
+    <span class="key">environment</span>:
+      <span class="key">POSTGRES_USER</span>: <span class="str">airflow</span>
+      <span class="key">POSTGRES_PASSWORD</span>: <span class="str">airflow</span>
+      <span class="key">POSTGRES_DB</span>: <span class="str">airflow</span>
+    <span class="key">volumes</span>:
+      - <span class="str">postgres_data:/var/lib/postgresql/data</span>
+
+  <span class="key">airflow-webserver</span>:                  <span class="cmt"># Interface web do Airflow (localhost:8080)</span>
+    &lt;&lt;: *<span class="str">airflow-common</span>               <span class="cmt"># Herda a âncora definida acima</span>
+    <span class="key">command</span>: <span class="str">webserver</span>
+    <span class="key">ports</span>:
+      - <span class="str">"8080:8080"</span>
+
+  <span class="key">airflow-scheduler</span>:                  <span class="cmt"># Scheduler: monitora e dispara as runs</span>
+    &lt;&lt;: *<span class="str">airflow-common</span>
+    <span class="key">command</span>: <span class="str">scheduler</span>
+
+<span class="key">volumes</span>:
+  <span class="key">postgres_data</span>:
+</pre>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="callout-icon">🚀</span>
+      <div class="callout-body"><strong>Para subir:</strong> <code>docker compose up airflow-init</code> (inicializa o banco do Airflow), depois <code>docker compose up -d</code>. Acesse a UI em <code>http://localhost:8080</code> com usuário <code>airflow</code> / senha <code>airflow</code>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SUMMARY -->
+<div class="summary">
+  <h2>Resumo da stack</h2>
+  <div class="summary-grid">
+    <div class="summary-item docker">
+      <div class="summary-tool">Docker</div>
+      <ul class="summary-list">
+        <li>Dockerfile: receita da imagem</li>
+        <li>docker-compose: múltiplos serviços</li>
+        <li>Volumes: persistência de dados</li>
+        <li>Networks: comunicação entre containers</li>
+        <li><a href="https://docs.docker.com" target="_blank" style="color:var(--docker)">docs.docker.com →</a></li>
+      </ul>
+    </div>
+    <div class="summary-item dbt">
+      <div class="summary-tool">dbt</div>
+      <ul class="summary-list">
+        <li>dbt_project.yml: config global</li>
+        <li>profiles.yml: conexão ao banco</li>
+        <li>models/: arquivos SQL</li>
+        <li>ref() e source(): dependências</li>
+        <li><a href="https://docs.getdbt.com" target="_blank" style="color:var(--dbt)">docs.getdbt.com →</a></li>
+      </ul>
+    </div>
+    <div class="summary-item airflow">
+      <div class="summary-tool">Airflow</div>
+      <ul class="summary-list">
+        <li>DAG: definição do pipeline</li>
+        <li>Operators: templates de tarefa</li>
+        <li>&gt;&gt;: dependências entre tasks</li>
+        <li>default_args: config global do DAG</li>
+        <li><a href="https://airflow.apache.org/docs" target="_blank" style="color:var(--airflow)">airflow.apache.org →</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</body>
+</html>
